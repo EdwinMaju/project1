@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Add Flight - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div style="max-width:700px; margin:0 auto;">
+        <h1 class="mb-4"><i class="fas fa-plus"></i> Add New Flight</h1>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.add_flight') }}">
+                    <div class="grid grid-2">
+                        <div class="field"><label for="flight_number">Flight Number</label><input type="text" class="input" id="flight_number" name="flight_number" required></div>
+                        <div class="field"><label for="airline">Airline</label><input type="text" class="input" id="airline" name="airline" required></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="departure_city">Departure City</label><input type="text" class="input" id="departure_city" name="departure_city" required></div>
+                        <div class="field"><label for="arrival_city">Arrival City</label><input type="text" class="input" id="arrival_city" name="arrival_city" required></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="departure_time">Departure Time</label><input type="datetime-local" class="input" id="departure_time" name="departure_time" required></div>
+                        <div class="field"><label for="arrival_time">Arrival Time</label><input type="datetime-local" class="input" id="arrival_time" name="arrival_time" required></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="price">Price per Ticket</label><input type="number" class="input" id="price" name="price" step="0.01" required></div>
+                        <div class="field"><label for="seats">Total Seats</label><input type="number" class="input" id="seats" name="seats" value="200" required></div>
+                    </div>
+                    <div class="gap-row">
+                        <button type="submit" class="btn btn-main"><i class="fas fa-save"></i> Add Flight</button>
+                        <a href="{{ url_for('admin.manage_flights') }}" class="btn btn-ghost"><i class="fas fa-times"></i> Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

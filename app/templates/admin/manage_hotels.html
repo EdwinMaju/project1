@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Manage Hotels - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div class="flex-between mb-4">
+        <h1><i class="fas fa-hotel"></i> Manage Hotels</h1>
+        <a href="{{ url_for('admin.add_hotel') }}" class="btn btn-main"><i class="fas fa-plus"></i> Add Hotel</a>
+    </div>
+    {% if hotels.items %}
+    <div class="table-scroll">
+        <table class="table">
+            <thead><tr><th>Hotel Name</th><th>City</th><th>Price/Night</th><th>Rating</th><th>Rooms</th></tr></thead>
+            <tbody>
+                {% for hotel in hotels.items %}
+                <tr>
+                    <td><strong>{{ hotel.name }}</strong></td>
+                    <td>{{ hotel.city }}</td>
+                    <td>₹{{ "{:,.0f}".format(hotel.price_per_night) }}</td>
+                    <td>⭐ {{ hotel.rating }}</td>
+                    <td>{{ hotel.available_rooms }} / {{ hotel.total_rooms }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">No hotels found</div>
+    {% endif %}
+</div>
+{% endblock %}

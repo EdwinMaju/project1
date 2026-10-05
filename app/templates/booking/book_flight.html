@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Book Flight - Voya{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4"><i class="fas fa-plane"></i> Book Flight</h1>
+    <div class="grid-half">
+        <div class="card mb-4">
+            <div class="card-head"><h5>Flight Details</h5></div>
+            <div class="card-body">
+                <div class="grid grid-2 mb-3">
+                    <div><h6 class="text-muted">Airline</h6><h4>{{ flight.airline }}</h4></div>
+                    <div><h6 class="text-muted">Flight Number</h6><h4>#{{ flight.flight_number }}</h4></div>
+                </div>
+                <div class="grid grid-2 mb-3">
+                    <div><h6 class="text-muted">Departure</h6><p class="mb-0"><strong>{{ flight.departure_city }}</strong><br>{{ travel_date }} at {{ flight.departure_time.strftime('%H:%M') }}</p></div>
+                    <div><h6 class="text-muted">Arrival</h6><p class="mb-0"><strong>{{ flight.arrival_city }}</strong><br>{{ travel_date }} at {{ flight.arrival_time.strftime('%H:%M') }}</p></div>
+                </div>
+                <hr>
+                <div class="grid grid-2">
+                    <div><h6 class="text-muted">Price per Ticket</h6><h4 class="text-ok">₹{{ "{:,.0f}".format(flight.price) }}</h4></div>
+                    <div><h6 class="text-muted">Available Seats</h6><h4>{{ flight.available_seats }}</h4></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-head"><h5>Book Now</h5></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('booking.book_flight', flight_id=flight.id) }}">
+                        <div class="field">
+                            <label for="travel_date">Travel Date</label>
+                            <input type="date" class="input" id="travel_date" name="travel_date" value="{{ travel_date }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="num_passengers">Number of Passengers</label>
+                            <input type="number" class="input" id="num_passengers" name="num_passengers" min="1" max="{{ flight.available_seats }}" value="1" required>
+                        </div>
+                        <hr>
+                        <div class="mb-3"><h6 class="text-muted">Estimated Cost</h6><h4 id="total_cost">₹{{ "{:,.0f}".format(flight.price) }}</h4></div>
+                        <button type="submit" class="btn btn-main full-width py-2"><i class="fas fa-book"></i> Continue to Payment</button>
+                        <a href="{{ url_for('customer.search_page') }}" class="btn btn-ghost full-width mt-2"><i class="fas fa-times"></i> Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const pricePerTicket = {{ flight.price }};
+    document.getElementById('num_passengers').addEventListener('change', function() {
+        document.getElementById('total_cost').textContent = '₹' + (pricePerTicket * this.value).toLocaleString('en-IN', {minimumFractionDigits: 0});
+    });
+</script>
+{% endblock %}

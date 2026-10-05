@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Payment - Voya{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4"><i class="fas fa-credit-card"></i> Payment</h1>
+    <div class="grid-equal">
+        <!-- Left: Summary & QR -->
+        <div>
+            <div class="card mb-4">
+                <div class="card-head"><h5>Booking Summary</h5></div>
+                <div class="card-body">
+                    <div class="mb-3"><h6 class="text-muted">Booking ID</h6><h4>#{{ booking.id }}</h4></div>
+                    <div class="mb-3"><h6 class="text-muted">Booking Type</h6>
+                        <h4>{% if booking.booking_type == 'flight' %}<i class="fas fa-plane"></i> Flight{% elif booking.booking_type == 'train' %}<i class="fas fa-train"></i> Train{% elif booking.booking_type == 'hotel' %}<i class="fas fa-hotel"></i> Hotel{% elif booking.booking_type == 'vehicle' %}<i class="fas fa-car"></i> Vehicle{% endif %}</h4>
+                    </div>
+                    {% if booking.flight %}
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>{{ booking.flight.airline }}</strong> ({{ booking.flight.flight_number }})</p>
+                        <p class="mb-1">{{ booking.flight.departure_city }} → {{ booking.flight.arrival_city }}</p>
+                        <p class="mb-0"><small>{{ booking.number_of_passengers }} passenger(s) × ₹{{ "{:,.0f}".format(booking.flight.price) }}</small></p>
+                    </div>
+                    {% endif %}
+                    {% if booking.train %}
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>{{ booking.train.train_name }}</strong> ({{ booking.train.train_number }})</p>
+                        <p class="mb-1">{{ booking.train.departure_city }} → {{ booking.train.arrival_city }}</p>
+                        <p class="mb-0"><small>{{ booking.number_of_passengers }} passenger(s) × ₹{{ "{:,.0f}".format(booking.train.price) }}</small></p>
+                    </div>
+                    {% endif %}
+                    {% if booking.hotel %}
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>{{ booking.hotel.name }}</strong> ({{ booking.hotel.city }})</p>
+                        <p class="mb-1">{{ booking.start_date.strftime('%d %b %Y') }} to {{ booking.end_date.strftime('%d %b %Y') }}</p>
+                        <p class="mb-0"><small>{{ booking.number_of_days }} night(s) × {{ booking.number_of_rooms }} room(s) × ₹{{ "{:,.0f}".format(booking.hotel.price_per_night) }}</small></p>
+                    </div>
+                    {% endif %}
+                    {% if booking.vehicle %}
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>{{ booking.vehicle.vehicle_type }}</strong> ({{ booking.vehicle.vehicle_number }})</p>
+                        <p class="mb-1">{{ booking.vehicle.city }}</p>
+                        <p class="mb-0"><small>{{ booking.number_of_days }} day(s) × {{ booking.number_of_vehicles }} unit(s) × ₹{{ "{:,.0f}".format(booking.vehicle.price_per_day) }}</small></p>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div class="text-center">
+                        <h6 class="text-muted">Total Amount</h6>
+                        <h2 class="text-ok">₹{{ "{:,.0f}".format(booking.total_cost) }}</h2>
+                    </div>
+                </div>
+            </div>
+            {% if payment and payment.qr_code_path %}
+            <div class="card">
+                <div class="card-head"><h5>Payment QR Code</h5></div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-3">Scan this QR code to make the payment</p>
+                    <img src="{{ url_for('booking.get_qrcode', payment_id=payment.id) }}" alt="Payment QR Code" style="max-width:250px; border:2px solid #ddd; border-radius:8px;">
+                    <p class="mt-3 text-muted"><small>Transaction ID: {{ payment.transaction_id or 'Pending' }}</small></p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <!-- Right: Payment Form -->
+        <div>
+            <div class="card">
+                <div class="card-head"><h5>Complete Payment</h5></div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <div>
+                            <i class="fas fa-info-circle"></i> <strong>Payment Instructions:</strong>
+                            <ol class="mb-0 mt-2">
+                                <li>Scan the QR code or make a UPI payment</li>
+                                <li>Upload screenshot of the payment</li>
+                                <li>Upload trip details/documents</li>
+                                <li>Submit for admin approval</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ url_for('booking.payment', booking_id=booking.id) }}" enctype="multipart/form-data">
+                        <div class="field">
+                            <label for="payment_screenshot"><strong>Payment Screenshot <span class="required">*</span></strong></label>
+                            <p class="text-muted" style="font-size:0.85rem; margin-bottom:0.4rem;">Upload a screenshot of your payment confirmation</p>
+                            <input type="file" class="input" id="payment_screenshot" name="payment_screenshot" accept=".jpg,.jpeg,.png,.gif,.pdf" required>
+                            <span class="form-hint">Accepted: JPG, PNG, PDF (Max 16MB)</span>
+                        </div>
+                        <div class="field">
+                            <label for="trip_document"><strong>Trip Details/Document</strong></label>
+                            <p class="text-muted" style="font-size:0.85rem; margin-bottom:0.4rem;">Upload ticket screenshot, booking confirmation, or additional details</p>
+                            <input type="file" class="input" id="trip_document" name="trip_document" accept=".jpg,.jpeg,.png,.gif,.pdf">
+                            <span class="form-hint">Accepted: JPG, PNG, PDF (Max 16MB)</span>
+                        </div>
+                        <hr>
+                        <div class="checkbox-row mb-3">
+                            <input type="checkbox" id="agree" required>
+                            <label for="agree">I confirm that I have uploaded valid payment proof and trip details. The information provided is accurate.</label>
+                        </div>
+                        <button type="submit" class="btn btn-success full-width py-2 mb-2"><i class="fas fa-check"></i> Submit Payment</button>
+                        <a href="{{ url_for('customer.search_page') }}" class="btn btn-ghost full-width"><i class="fas fa-times"></i> Cancel</a>
+                    </form>
+                    <div class="alert alert-warn mt-3">
+                        <div>
+                            <strong><i class="fas fa-exclamation-triangle"></i> Important:</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Your booking will be confirmed once admin verifies the payment</li>
+                                <li>You will receive a confirmation email shortly</li>
+                                <li>Make sure all documents are clear and readable</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

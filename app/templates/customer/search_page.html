@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Book Your Trip - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="text-center mb-4">
+        <h1><i class="fas fa-globe"></i> Plan Your Perfect Trip</h1>
+        <p class="text-muted">Search and book flights, trains, hotels, and vehicles in one place</p>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('customer.search') }}">
+                <div class="search-row">
+                    <div class="search-field">
+                        <label>Type</label>
+                        <select name="transport_type">
+                            <option value="flight">Flight</option>
+                            <option value="train">Train</option>
+                            <option value="hotel">Hotel</option>
+                            <option value="vehicle">Vehicle</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div class="search-field">
+                        <label>From</label>
+                        <input type="text" name="departure" placeholder="City" required>
+                    </div>
+                    <div class="search-field">
+                        <label>To</label>
+                        <input type="text" name="arrival" placeholder="City" required>
+                    </div>
+                    <div class="search-field">
+                        <label>Date</label>
+                        <input type="date" name="travel_date" required>
+                    </div>
+                    <div class="search-field">
+                        <label>Return</label>
+                        <input type="date" name="return_date">
+                    </div>
+                    <div class="search-go">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Popular Destinations -->
+    <h3 class="mb-3">Popular Destinations</h3>
+    <div class="dest-row mb-5">
+        <div class="dest-card"
+            onclick="document.getElementById('arrival').value='Delhi'; document.querySelector('form').submit();">
+            <h5><i class="fas fa-gopuram"></i> Delhi</h5>
+            <p>Explore history and culture</p>
+        </div>
+        <div class="dest-card"
+            onclick="document.getElementById('arrival').value='Goa'; document.querySelector('form').submit();">
+            <h5><i class="fas fa-umbrella-beach"></i> Goa</h5>
+            <p>Relax on beautiful beaches</p>
+        </div>
+        <div class="dest-card"
+            onclick="document.getElementById('arrival').value='Bangalore'; document.querySelector('form').submit();">
+            <h5><i class="fas fa-city"></i> Bangalore</h5>
+            <p>Experience modern India</p>
+        </div>
+        <div class="dest-card"
+            onclick="document.getElementById('arrival').value='Mumbai'; document.querySelector('form').submit();">
+            <h5><i class="fas fa-landmark"></i> Mumbai</h5>
+            <p>Discover the city that never sleeps</p>
+        </div>
+    </div>
+
+    <!-- Tips -->
+    <h3 class="mb-3">Booking Tips</h3>
+    <div class="tips-row">
+        <div class="tip-card">
+            <h5><i class="fas fa-calendar-alt text-primary"></i> Book in Advance</h5>
+            <p>Book your trips in advance to get better prices and availability.</p>
+        </div>
+        <div class="tip-card">
+            <h5><i class="fas fa-box text-ok"></i> Package Deals</h5>
+            <p>Book flights, hotels, and vehicles together to save more!</p>
+        </div>
+        <div class="tip-card">
+            <h5><i class="fas fa-shield-alt text-warn"></i> Easy Payment</h5>
+            <p>Secure payment with QR code. Simple and hassle-free process.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

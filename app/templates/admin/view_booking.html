@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Booking Details - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4">Booking Details #{{ booking.id }}</h1>
+    <div class="grid-half">
+        <div>
+            <!-- Booking Info -->
+            <div class="card mb-4">
+                <div class="card-head"><h5>Booking Information</h5></div>
+                <div class="card-body">
+                    <div class="grid grid-2 mb-3">
+                        <div><h6 class="text-muted">Booking ID</h6><p>#{{ booking.id }}</p></div>
+                        <div><h6 class="text-muted">Booking Status</h6><p>{% if booking.booking_status == 'confirmed' %}<span class="badge badge-ok">Confirmed</span>{% elif booking.booking_status == 'pending' %}<span class="badge badge-warn">Pending</span>{% else %}<span class="badge badge-bad">Cancelled</span>{% endif %}</p></div>
+                    </div>
+                    <div class="grid grid-2 mb-3">
+                        <div><h6 class="text-muted">Booking Type</h6><p>{{ booking.booking_type.upper() }}</p></div>
+                        <div><h6 class="text-muted">Total Cost</h6><p><strong>₹{{ "{:,.0f}".format(booking.total_cost) }}</strong></p></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div><h6 class="text-muted">Created</h6><p>{{ booking.created_at.strftime('%d %b %Y, %H:%M') }}</p></div>
+                        <div><h6 class="text-muted">Updated</h6><p>{{ booking.updated_at.strftime('%d %b %Y, %H:%M') }}</p></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Trip Details -->
+            <div class="card mb-4">
+                <div class="card-head"><h5>Trip Details</h5></div>
+                <div class="card-body">
+                    {% if booking.flight %}
+                        <p><strong>Flight:</strong> {{ booking.flight.airline }} - {{ booking.flight.flight_number }}</p>
+                        <p>{{ booking.flight.departure_city }} → {{ booking.flight.arrival_city }}</p>
+                        <p><strong>Passengers:</strong> {{ booking.number_of_passengers }}</p>
+                    {% endif %}
+                    {% if booking.train %}
+                        <p><strong>Train:</strong> {{ booking.train.train_name }} - {{ booking.train.train_number }}</p>
+                        <p>{{ booking.train.departure_city }} → {{ booking.train.arrival_city }}</p>
+                        <p><strong>Passengers:</strong> {{ booking.number_of_passengers }}</p>
+                    {% endif %}
+                    {% if booking.hotel %}
+                        <p><strong>Hotel:</strong> {{ booking.hotel.name }}</p>
+                        <p>{{ booking.hotel.city }} - {{ booking.hotel.address }}</p>
+                        <p><strong>Check-in:</strong> {{ booking.start_date }} | <strong>Check-out:</strong> {{ booking.end_date }}</p>
+                        <p><strong>Rooms:</strong> {{ booking.number_of_rooms }}</p>
+                    {% endif %}
+                    {% if booking.vehicle %}
+                        <p><strong>Vehicle:</strong> {{ booking.vehicle.vehicle_type }} - {{ booking.vehicle.vehicle_number }}</p>
+                        <p>{{ booking.vehicle.city }}</p>
+                        <p><strong>From:</strong> {{ booking.start_date }} | <strong>To:</strong> {{ booking.end_date }}</p>
+                        <p><strong>Units:</strong> {{ booking.number_of_vehicles }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Documents -->
+            {% if booking.screenshot or (payment and payment.payment_screenshot) %}
+            <div class="card mb-4">
+                <div class="card-head"><h5>Uploaded Documents</h5></div>
+                <div class="card-body">
+                    {% if booking.screenshot %}
+                    <p><a href="{{ url_for('static', filename='uploads/' + booking.screenshot) }}" target="_blank" class="btn btn-sm btn-main"><i class="fas fa-file"></i> Trip Screenshot</a></p>
+                    {% endif %}
+                    {% if payment and payment.payment_screenshot %}
+                    <p><a href="{{ url_for('static', filename='uploads/' + payment.payment_screenshot) }}" target="_blank" class="btn btn-sm btn-main"><i class="fas fa-file"></i> Payment Screenshot</a></p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div>
+            <!-- Customer Info -->
+            <div class="card mb-4">
+                <div class="card-head"><h5>Customer Information</h5></div>
+                <div class="card-body">
+                    <p><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+                    <p>{{ user.email }}</p>
+                    <p>{{ user.phone }}</p>
+                    <small class="text-muted">Username: {{ user.username }}</small>
+                </div>
+            </div>
+            <!-- Payment Info -->
+            {% if payment %}
+            <div class="card mb-4">
+                <div class="card-head"><h5>Payment Information</h5></div>
+                <div class="card-body">
+                    <p><strong>Amount:</strong> ₹{{ "{:,.2f}".format(payment.amount) }}</p>
+                    <p><strong>Status:</strong><br>{% if payment.payment_status == 'completed' %}<span class="badge badge-ok">Completed</span>{% elif payment.payment_status == 'pending' %}<span class="badge badge-warn">Pending</span>{% else %}<span class="badge badge-bad">Failed</span>{% endif %}</p>
+                    {% if payment.transaction_id %}<p><strong>Transaction ID:</strong><br><code>{{ payment.transaction_id }}</code></p>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            <!-- Admin Actions -->
+            {% if booking.booking_status == 'pending' %}
+            <div class="card">
+                <div class="card-head"><h5>Admin Actions</h5></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.confirm_booking', booking_id=booking.id) }}" class="mb-3">
+                        <div class="field">
+                            <label for="admin_notes">Admin Notes</label>
+                            <textarea class="input" id="admin_notes" name="admin_notes" rows="3" placeholder="Add any notes..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success full-width"><i class="fas fa-check"></i> Confirm Booking</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.reject_booking', booking_id=booking.id) }}">
+                        <div class="field">
+                            <label for="reject_notes">Rejection Reason</label>
+                            <textarea class="input" id="reject_notes" name="admin_notes" rows="3" placeholder="Reason for rejection..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger full-width" onclick="return confirm('Are you sure?')"><i class="fas fa-times"></i> Reject Booking</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="mt-4">
+        <a href="{{ url_for('admin.manage_bookings') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Bookings</a>
+    </div>
+</div>
+{% endblock %}

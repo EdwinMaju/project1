@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Manage Flights - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div class="flex-between mb-4">
+        <h1><i class="fas fa-plane"></i> Manage Flights</h1>
+        <a href="{{ url_for('admin.add_flight') }}" class="btn btn-main"><i class="fas fa-plus"></i> Add New Flight</a>
+    </div>
+    {% if flights.items %}
+    <div class="table-scroll">
+        <table class="table">
+            <thead><tr><th>Flight Number</th><th>Airline</th><th>Route</th><th>Departure</th><th>Price</th><th>Seats</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for flight in flights.items %}
+                <tr>
+                    <td><strong>{{ flight.flight_number }}</strong></td>
+                    <td>{{ flight.airline }}</td>
+                    <td>{{ flight.departure_city }} → {{ flight.arrival_city }}</td>
+                    <td>{{ flight.departure_time.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td>₹{{ "{:,.0f}".format(flight.price) }}</td>
+                    <td>{{ flight.available_seats }} / {{ flight.total_seats }}</td>
+                    <td>
+                        <div class="gap-row">
+                            <a href="{{ url_for('admin.edit_flight', flight_id=flight.id) }}" class="btn btn-sm btn-warn"><i class="fas fa-edit"></i> Edit</a>
+                            <form method="POST" action="{{ url_for('admin.delete_flight', flight_id=flight.id) }}" class="inline-form" onclick="return confirm('Delete this flight?')">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <nav>
+        <ul class="pagination">
+            {% if flights.has_prev %}<li><a class="page-link" href="{{ url_for('admin.manage_flights', page=flights.prev_num) }}">Previous</a></li>{% endif %}
+            {% for page_num in flights.iter_pages() %}{% if page_num %}<li class="{% if page_num == flights.page %}page-active{% endif %}"><a class="page-link" href="{{ url_for('admin.manage_flights', page=page_num) }}">{{ page_num }}</a></li>{% endif %}{% endfor %}
+            {% if flights.has_next %}<li><a class="page-link" href="{{ url_for('admin.manage_flights', page=flights.next_num) }}">Next</a></li>{% endif %}
+        </ul>
+    </nav>
+    {% else %}
+    <div class="alert alert-info">No flights found. <a href="{{ url_for('admin.add_flight') }}">Add one now</a></div>
+    {% endif %}
+</div>
+{% endblock %}

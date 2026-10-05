@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="settings-header mb-4">
+        <h1><i class="fas fa-cog text-primary"></i> Account Settings</h1>
+        <p class="text-muted">Security and account preferences.</p>
+    </div>
+
+    <div class="grid grid-half">
+        <div class="card">
+            <div class="card-head">
+                <h5>Change Password</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="field">
+                        <label>Current Password</label>
+                        <input type="password" name="old_password" class="input" required placeholder="••••••••">
+                    </div>
+                    
+                    <div class="dropdown-sep mb-3"></div>
+                    
+                    <div class="field">
+                        <label>New Password</label>
+                        <input type="password" name="new_password" class="input" required placeholder="Enter new password">
+                    </div>
+                    
+                    <div class="field">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="input" required placeholder="Repeat new password">
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-main">
+                            <i class="fas fa-key"></i> Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="settings-sidebar">
+            <div class="card mb-4">
+                <div class="card-head">
+                    <h5>Privacy & Security</h5>
+                </div>
+                <div class="card-body">
+                    <div class="checkbox-row mb-3">
+                        <input type="checkbox" id="email_notif" checked disabled>
+                        <label for="email_notif">Email Notifications for bookings</label>
+                    </div>
+                    <div class="checkbox-row mb-3">
+                        <input type="checkbox" id="two_factor" disabled>
+                        <label for="two_factor">Two-Factor Authentication (Coming Soon)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-top: 4px solid var(--red);">
+                <div class="card-head">
+                    <h5 class="text-danger">Danger Zone</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Once you delete your account, there is no going back. Please be certain.</p>
+                    <button class="btn btn-danger full-width" onclick="alert('Please contact support to delete your account.')">
+                        <i class="fas fa-trash-alt"></i> Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

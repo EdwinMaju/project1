@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+
+{% block title %}Search & Book - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4"><i class="fas fa-search"></i> Search & Book Your Trip</h1>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('customer.search') }}" id="searchForm">
+                <div class="search-row">
+                    <div class="search-field">
+                        <label>Type</label>
+                        <select name="transport_type">
+                            <option value="flight" {% if transport_type == 'flight' %}selected{% endif %}>Flight</option>
+                            <option value="train" {% if transport_type == 'train' %}selected{% endif %}>Train</option>
+                            <option value="hotel" {% if transport_type == 'hotel' %}selected{% endif %}>Hotel</option>
+                            <option value="vehicle" {% if transport_type == 'vehicle' %}selected{% endif %}>Vehicle</option>
+                            <option value="all" {% if transport_type == 'all' %}selected{% endif %}>All</option>
+                        </select>
+                    </div>
+                    <div class="search-field">
+                        <label>From</label>
+                        <input type="text" name="departure" value="{{ departure }}">
+                    </div>
+                    <div class="search-field">
+                        <label>To</label>
+                        <input type="text" name="arrival" value="{{ arrival }}">
+                    </div>
+                    <div class="search-field">
+                        <label>Date</label>
+                        <input type="date" name="travel_date" value="{{ travel_date }}">
+                    </div>
+                    <div class="search-field">
+                        <label>Return</label>
+                        <input type="date" name="return_date" value="{{ return_date }}">
+                    </div>
+                    <div class="search-go">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <input type="hidden" name="sort_by" id="sortInput" value="{{ sort_by }}">
+            </form>
+        </div>
+    </div>
+
+    <!-- Filter + Sort Controls (only if results exist) -->
+    {% if scored and (scored.flights or scored.trains or scored.hotels or scored.vehicles) %}
+    <div class="filter-sort-row mb-3">
+        <!-- Filter Toggle -->
+        <button class="btn btn-ghost btn-sm" id="filterToggleBtn" onclick="toggleFilters()">
+            <i class="fas fa-sliders-h"></i> Filters
+        </button>
+
+        <!-- Sort Controls -->
+        <div class="sort-controls">
+            <span class="sort-label"><i class="fas fa-sort-amount-down"></i> Sort:</span>
+            <div class="sort-options">
+                <button class="sort-btn {% if sort_by == 'recommended' %}active{% endif %}" onclick="applySort('recommended')">
+                    <i class="fas fa-magic"></i> Recommended
+                </button>
+                <button class="sort-btn {% if sort_by == 'price_low' %}active{% endif %}" onclick="applySort('price_low')">
+                    <i class="fas fa-arrow-up"></i> Price: Low → High
+                </button>
+                <button class="sort-btn {% if sort_by == 'price_high' %}active{% endif %}" onclick="applySort('price_high')">
+                    <i class="fas fa-arrow-down"></i> Price: High → Low
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel" id="filterPanel">
+        <div class="filter-panel-inner">
+            <div class="filter-group">
+                <label class="filter-label"><i class="fas fa-rupee-sign"></i> Price Range</label>
+                <div class="filter-range-row">
+                    <input type="number" id="filterPriceMin" class="filter-input" placeholder="Min" min="0" oninput="applyFilters()">
+                    <span class="filter-range-sep">—</span>
+                    <input type="number" id="filterPriceMax" class="filter-input" placeholder="Max" min="0" oninput="applyFilters()">
+                </div>
+            </div>
+
+            {% if scored.flights or transport_type in ['flight', 'all'] %}
+            <div class="filter-group" id="filterAirlineGroup">
+                <label class="filter-label"><i class="fas fa-plane"></i> Airline</label>
+                <div class="filter-checks" id="airlineChecks"></div>
+            </div>
+            {% endif %}
+
+            {% if scored.trains or transport_type in ['train', 'all'] %}
+            <div class="filter-group" id="filterCoachGroup">
+                <label class="filter-label"><i class="fas fa-train"></i> Coach Type</label>
+                <div class="filter-checks">
+                    <label class="filter-check-label"><input type="checkbox" value="AC" checked onchange="applyFilters()"> AC</label>
+                    <label class="filter-check-label"><input type="checkbox" value="Non-AC" checked onchange="applyFilters()"> Non-AC</label>
+                    <label class="filter-check-label"><input type="checkbox" value="Sleeper" checked onchange="applyFilters()"> Sleeper</label>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if scored.hotels or transport_type in ['hotel', 'all'] %}
+            <div class="filter-group" id="filterRatingGroup">
+                <label class="filter-label"><i class="fas fa-star"></i> Min Rating</label>
+                <select id="filterRating" class="filter-input" onchange="applyFilters()">
+                    <option value="0">Any</option>
+                    <option value="3">3★ & above</option>
+                    <option value="4">4★ & above</option>
+                    <option value="4.5">4.5★ & above</option>
+                </select>
+            </div>
+            {% endif %}
+
+            {% if scored.vehicles or transport_type in ['vehicle', 'all'] %}
+            <div class="filter-group" id="filterVehicleTypeGroup">
+                <label class="filter-label"><i class="fas fa-car"></i> Vehicle Type</label>
+                <div class="filter-checks" id="vehicleTypeChecks"></div>
+            </div>
+            {% endif %}
+
+            <div class="filter-group">
+                <button class="btn btn-ghost btn-sm full-width" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear All Filters
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Results -->
+    {% if scored %}
+        {% if scored.flights %}
+        <h3 class="mb-3"><i class="fas fa-plane"></i> Flights ({{ scored.flights|length }})</h3>
+        <div class="grid grid-2 mb-4">
+            {% for entry in scored.flights %}
+            {% set flight = entry.item %}
+            <div class="card result-card" data-type="flight" data-id="{{ flight.id }}"
+                 data-price="{{ flight.price }}" data-airline="{{ flight.airline }}">
+                {% if entry.badge %}
+                <div class="rec-badge rec-badge-{{ entry.badge|lower|replace(' ', '-') }}" title="{{ entry.reason }}">
+                    {% if entry.badge == 'Best Value' %}<i class="fas fa-tag"></i>
+                    {% elif entry.badge == 'Most Popular' %}<i class="fas fa-fire"></i>
+                    {% elif entry.badge == 'Top Rated' %}<i class="fas fa-star"></i>
+                    {% else %}<i class="fas fa-thumbs-up"></i>
+                    {% endif %}
+                    {{ entry.badge }}
+                    <span class="rec-tooltip">{{ entry.reason }}</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="result-top">
+                        <h5>{{ flight.airline }}</h5>
+                        <label class="compare-check" title="Add to compare">
+                            <input type="checkbox" class="compare-cb" data-type="flight" data-id="{{ flight.id }}" onchange="updateCompareBar()">
+                            <span><i class="fas fa-balance-scale"></i></span>
+                        </label>
+                    </div>
+                    <p class="text-muted mb-1">
+                        <strong>Flight #{{ flight.flight_number }}</strong><br>
+                        {{ flight.departure_city }} → {{ flight.arrival_city }}<br>
+                        <small><i class="fas fa-clock"></i> {{ flight.departure_time.strftime('%H:%M') }} - {{ flight.arrival_time.strftime('%H:%M') }}</small><br>
+                        <small class="text-primary"><i class="fas fa-calendar-check"></i> {{ travel_date }}</small>
+                    </p>
+                    <div class="flex-between mb-2">
+                        <span><strong>Price:</strong> ₹{{ "{:,.0f}".format(flight.price) }}</span>
+                        <span><strong>Seats:</strong> {{ flight.available_seats }}</span>
+                    </div>
+                    {% if entry.score %}
+                    <div class="rec-score-bar mb-2">
+                        <div class="rec-score-fill" style="width: {{ entry.score }}%"></div>
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('booking.book_flight', flight_id=flight.id, travel_date=travel_date) }}" class="btn btn-main btn-sm full-width">
+                        <i class="fas fa-ticket-alt"></i> Book Now
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if scored.trains %}
+        <h3 class="mb-3"><i class="fas fa-train"></i> Trains ({{ scored.trains|length }})</h3>
+        <div class="grid grid-2 mb-4">
+            {% for entry in scored.trains %}
+            {% set train = entry.item %}
+            <div class="card result-card" data-type="train" data-id="{{ train.id }}"
+                 data-price="{{ train.price }}" data-coach="{{ train.coach_type }}">
+                {% if entry.badge %}
+                <div class="rec-badge rec-badge-{{ entry.badge|lower|replace(' ', '-') }}" title="{{ entry.reason }}">
+                    {% if entry.badge == 'Best Value' %}<i class="fas fa-tag"></i>
+                    {% elif entry.badge == 'Most Popular' %}<i class="fas fa-fire"></i>
+                    {% elif entry.badge == 'Top Rated' %}<i class="fas fa-star"></i>
+                    {% else %}<i class="fas fa-thumbs-up"></i>
+                    {% endif %}
+                    {{ entry.badge }}
+                    <span class="rec-tooltip">{{ entry.reason }}</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="result-top">
+                        <h5>{{ train.train_name }}</h5>
+                        <label class="compare-check" title="Add to compare">
+                            <input type="checkbox" class="compare-cb" data-type="train" data-id="{{ train.id }}" onchange="updateCompareBar()">
+                            <span><i class="fas fa-balance-scale"></i></span>
+                        </label>
+                    </div>
+                    <p class="text-muted mb-1">
+                        <strong>Train #{{ train.train_number }}</strong><br>
+                        {{ train.departure_city }} → {{ train.arrival_city }}<br>
+                        <small><i class="fas fa-clock"></i> {{ train.departure_time.strftime('%H:%M') }} - {{ train.arrival_time.strftime('%H:%M') }}</small><br>
+                        <small class="text-primary"><i class="fas fa-calendar-check"></i> {{ travel_date }}</small>
+                    </p>
+                    <div class="flex-between mb-2">
+                        <span><strong>Price:</strong> ₹{{ "{:,.0f}".format(train.price) }}</span>
+                        <span><strong>Type:</strong> {{ train.coach_type }}</span>
+                    </div>
+                    {% if entry.score %}
+                    <div class="rec-score-bar mb-2">
+                        <div class="rec-score-fill" style="width: {{ entry.score }}%"></div>
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('booking.book_train', train_id=train.id, travel_date=travel_date) }}" class="btn btn-main btn-sm full-width">
+                        <i class="fas fa-ticket-alt"></i> Book Now
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if scored.hotels %}
+        <h3 class="mb-3"><i class="fas fa-hotel"></i> Hotels ({{ scored.hotels|length }})</h3>
+        <div class="grid grid-3 mb-4">
+            {% for entry in scored.hotels %}
+            {% set hotel = entry.item %}
+            <div class="card result-card" data-type="hotel" data-id="{{ hotel.id }}"
+                 data-price="{{ hotel.price_per_night }}" data-rating="{{ hotel.rating or 0 }}">
+                {% if entry.badge %}
+                <div class="rec-badge rec-badge-{{ entry.badge|lower|replace(' ', '-') }}" title="{{ entry.reason }}">
+                    {% if entry.badge == 'Best Value' %}<i class="fas fa-tag"></i>
+                    {% elif entry.badge == 'Most Popular' %}<i class="fas fa-fire"></i>
+                    {% elif entry.badge == 'Top Rated' %}<i class="fas fa-star"></i>
+                    {% else %}<i class="fas fa-thumbs-up"></i>
+                    {% endif %}
+                    {{ entry.badge }}
+                    <span class="rec-tooltip">{{ entry.reason }}</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="result-top">
+                        <h5>{{ hotel.name }}</h5>
+                        <label class="compare-check" title="Add to compare">
+                            <input type="checkbox" class="compare-cb" data-type="hotel" data-id="{{ hotel.id }}" onchange="updateCompareBar()">
+                            <span><i class="fas fa-balance-scale"></i></span>
+                        </label>
+                    </div>
+                    <p class="text-muted mb-1">
+                        <strong>{{ hotel.city }}</strong><br>
+                        <small>{{ hotel.address }}</small><br>
+                        {% if hotel.rating %}<span class="badge badge-warn">⭐ {{ hotel.rating }}</span>{% endif %}
+                    </p>
+                    <p class="text-muted">{{ hotel.description }}</p>
+                    <div class="flex-between mb-2">
+                        <strong>₹{{ "{:,.0f}".format(hotel.price_per_night) }}/night</strong>
+                        <strong>{{ hotel.available_rooms }} rooms</strong>
+                    </div>
+                    {% if entry.score %}
+                    <div class="rec-score-bar mb-2">
+                        <div class="rec-score-fill" style="width: {{ entry.score }}%"></div>
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('booking.book_hotel', hotel_id=hotel.id) }}" class="btn btn-main btn-sm full-width">
+                        <i class="fas fa-key"></i> Book Now
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if scored.vehicles %}
+        <h3 class="mb-3"><i class="fas fa-car"></i> Vehicles ({{ scored.vehicles|length }})</h3>
+        <div class="grid grid-3 mb-4">
+            {% for entry in scored.vehicles %}
+            {% set vehicle = entry.item %}
+            <div class="card result-card" data-type="vehicle" data-id="{{ vehicle.id }}"
+                 data-price="{{ vehicle.price_per_day }}" data-vtype="{{ vehicle.vehicle_type }}">
+                {% if entry.badge %}
+                <div class="rec-badge rec-badge-{{ entry.badge|lower|replace(' ', '-') }}" title="{{ entry.reason }}">
+                    {% if entry.badge == 'Best Value' %}<i class="fas fa-tag"></i>
+                    {% elif entry.badge == 'Most Popular' %}<i class="fas fa-fire"></i>
+                    {% elif entry.badge == 'Top Rated' %}<i class="fas fa-star"></i>
+                    {% else %}<i class="fas fa-thumbs-up"></i>
+                    {% endif %}
+                    {{ entry.badge }}
+                    <span class="rec-tooltip">{{ entry.reason }}</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="result-top">
+                        <h5>{{ vehicle.vehicle_type }}</h5>
+                        <label class="compare-check" title="Add to compare">
+                            <input type="checkbox" class="compare-cb" data-type="vehicle" data-id="{{ vehicle.id }}" onchange="updateCompareBar()">
+                            <span><i class="fas fa-balance-scale"></i></span>
+                        </label>
+                    </div>
+                    <p class="text-muted mb-1">
+                        <strong>{{ vehicle.vehicle_number }}</strong><br>
+                        <small>{{ vehicle.city }}</small><br>
+                        Capacity: {{ vehicle.capacity }} persons
+                    </p>
+                    <p class="text-muted">{{ vehicle.description }}</p>
+                    <div class="flex-between mb-2">
+                        <strong>₹{{ "{:,.0f}".format(vehicle.price_per_day) }}/day</strong>
+                        <strong>{{ vehicle.available_units }} available</strong>
+                    </div>
+                    {% if entry.score %}
+                    <div class="rec-score-bar mb-2">
+                        <div class="rec-score-fill" style="width: {{ entry.score }}%"></div>
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('booking.book_vehicle', vehicle_id=vehicle.id) }}" class="btn btn-main btn-sm full-width">
+                        <i class="fas fa-car"></i> Book Now
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not (scored.flights or scored.trains or scored.hotels or scored.vehicles) %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No results found. Try adjusting your search criteria.
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!-- Floating Compare Bar -->
+<div class="compare-bar" id="compareBar">
+    <div class="compare-bar-inner">
+        <div class="compare-bar-info">
+            <i class="fas fa-balance-scale"></i>
+            <span id="compareCount">0</span> items selected
+            <small class="compare-bar-hint">(select 2–4 of the same type)</small>
+        </div>
+        <div class="compare-bar-actions">
+            <button class="btn btn-ghost btn-sm" onclick="clearCompare()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+            <button class="btn btn-main btn-sm" id="compareGoBtn" onclick="goCompare()" disabled>
+                <i class="fas fa-chart-bar"></i> Compare Now
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Sort ──
+function applySort(sortValue) {
+    document.getElementById('sortInput').value = sortValue;
+    document.getElementById('searchForm').submit();
+}
+
+// ── Filters ──
+let filtersOpen = false;
+
+function toggleFilters() {
+    filtersOpen = !filtersOpen;
+    const panel = document.getElementById('filterPanel');
+    const btn = document.getElementById('filterToggleBtn');
+    if (filtersOpen) {
+        panel.classList.add('open');
+        btn.classList.add('active');
+    } else {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+    }
+}
+
+// Build dynamic filter checkboxes from result cards
+function buildDynamicFilters() {
+    // Airlines
+    const airlineSet = new Set();
+    document.querySelectorAll('.result-card[data-airline]').forEach(card => {
+        if (card.dataset.airline) airlineSet.add(card.dataset.airline);
+    });
+    const airlineContainer = document.getElementById('airlineChecks');
+    if (airlineContainer && airlineSet.size > 0) {
+        airlineContainer.innerHTML = '';
+        airlineSet.forEach(a => {
+            const label = document.createElement('label');
+            label.className = 'filter-check-label';
+            label.innerHTML = `<input type="checkbox" value="${a}" checked onchange="applyFilters()"> ${a}`;
+            airlineContainer.appendChild(label);
+        });
+    }
+    
+    // Vehicle types
+    const vTypeSet = new Set();
+    document.querySelectorAll('.result-card[data-vtype]').forEach(card => {
+        if (card.dataset.vtype) vTypeSet.add(card.dataset.vtype);
+    });
+    const vTypeContainer = document.getElementById('vehicleTypeChecks');
+    if (vTypeContainer && vTypeSet.size > 0) {
+        vTypeContainer.innerHTML = '';
+        vTypeSet.forEach(vt => {
+            const label = document.createElement('label');
+            label.className = 'filter-check-label';
+            label.innerHTML = `<input type="checkbox" value="${vt}" checked onchange="applyFilters()"> ${vt}`;
+            vTypeContainer.appendChild(label);
+        });
+    }
+}
+
+function applyFilters() {
+    const minPrice = parseFloat(document.getElementById('filterPriceMin')?.value) || 0;
+    const maxPrice = parseFloat(document.getElementById('filterPriceMax')?.value) || Infinity;
+    const minRating = parseFloat(document.getElementById('filterRating')?.value) || 0;
+
+    // Get checked airlines
+    const airlineChecks = document.querySelectorAll('#airlineChecks input[type="checkbox"]');
+    const selectedAirlines = new Set();
+    airlineChecks.forEach(cb => { if (cb.checked) selectedAirlines.add(cb.value); });
+
+    // Get checked coach types
+    const coachChecks = document.querySelectorAll('#filterCoachGroup input[type="checkbox"]');
+    const selectedCoaches = new Set();
+    coachChecks.forEach(cb => { if (cb.checked) selectedCoaches.add(cb.value); });
+
+    // Get checked vehicle types
+    const vTypeChecks = document.querySelectorAll('#vehicleTypeChecks input[type="checkbox"]');
+    const selectedVTypes = new Set();
+    vTypeChecks.forEach(cb => { if (cb.checked) selectedVTypes.add(cb.value); });
+
+    document.querySelectorAll('.result-card').forEach(card => {
+        const price = parseFloat(card.dataset.price) || 0;
+        const type = card.dataset.type;
+        let visible = true;
+
+        // Price filter
+        if (price < minPrice || price > maxPrice) visible = false;
+
+        // Type-specific filters
+        if (type === 'flight' && airlineChecks.length > 0) {
+            if (!selectedAirlines.has(card.dataset.airline)) visible = false;
+        }
+        if (type === 'train' && coachChecks.length > 0) {
+            if (!selectedCoaches.has(card.dataset.coach)) visible = false;
+        }
+        if (type === 'hotel') {
+            const rating = parseFloat(card.dataset.rating) || 0;
+            if (rating < minRating) visible = false;
+        }
+        if (type === 'vehicle' && vTypeChecks.length > 0) {
+            if (!selectedVTypes.has(card.dataset.vtype)) visible = false;
+        }
+
+        card.style.display = visible ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    const priceMin = document.getElementById('filterPriceMin');
+    const priceMax = document.getElementById('filterPriceMax');
+    const rating = document.getElementById('filterRating');
+    if (priceMin) priceMin.value = '';
+    if (priceMax) priceMax.value = '';
+    if (rating) rating.value = '0';
+
+    document.querySelectorAll('#filterPanel input[type="checkbox"]').forEach(cb => cb.checked = true);
+
+    applyFilters();
+}
+
+// Init dynamic filters on load
+document.addEventListener('DOMContentLoaded', buildDynamicFilters);
+
+// ── Compare ──
+function updateCompareBar() {
+    const checked = document.querySelectorAll('.compare-cb:checked');
+    const bar = document.getElementById('compareBar');
+    const countEl = document.getElementById('compareCount');
+    const goBtn = document.getElementById('compareGoBtn');
+
+    countEl.textContent = checked.length;
+
+    if (checked.length > 0) {
+        bar.classList.add('visible');
+    } else {
+        bar.classList.remove('visible');
+    }
+
+    let types = new Set();
+    checked.forEach(cb => types.add(cb.dataset.type));
+
+    if (checked.length >= 2 && checked.length <= 4 && types.size === 1) {
+        goBtn.disabled = false;
+        goBtn.classList.remove('btn-ghost');
+        goBtn.classList.add('btn-main');
+    } else {
+        goBtn.disabled = true;
+    }
+
+    if (checked.length >= 4) {
+        document.querySelectorAll('.compare-cb:not(:checked)').forEach(cb => {
+            cb.disabled = true;
+            cb.closest('.compare-check').classList.add('disabled');
+        });
+    } else {
+        document.querySelectorAll('.compare-cb').forEach(cb => {
+            cb.disabled = false;
+            cb.closest('.compare-check').classList.remove('disabled');
+        });
+    }
+}
+
+function clearCompare() {
+    document.querySelectorAll('.compare-cb:checked').forEach(cb => {
+        cb.checked = false;
+        cb.disabled = false;
+        cb.closest('.compare-check').classList.remove('disabled');
+    });
+    updateCompareBar();
+}
+
+function goCompare() {
+    const checked = document.querySelectorAll('.compare-cb:checked');
+    if (checked.length < 2) return;
+
+    let type = checked[0].dataset.type;
+    let ids = [];
+    checked.forEach(cb => ids.push(cb.dataset.id));
+
+    window.location.href = "{{ url_for('customer.compare') }}?type=" + type + "&ids=" + ids.join(',');
+}
+</script>
+{% endblock %}

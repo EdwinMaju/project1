@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Book Hotel - Voya{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4"><i class="fas fa-hotel"></i> Book Hotel</h1>
+    <div class="grid-half">
+        <div class="card mb-4">
+            <div class="card-head"><h5>Hotel Details</h5></div>
+            <div class="card-body">
+                <h4>{{ hotel.name }}</h4>
+                <p class="text-muted mb-3">{{ hotel.city }} | <span class="badge badge-warn">⭐ {{ hotel.rating }}</span></p>
+                <p>{{ hotel.address }}</p>
+                <p class="text-muted">{{ hotel.description }}</p>
+                <hr>
+                <h6 class="mb-2">Amenities</h6>
+                <p class="text-muted">{{ hotel.amenities }}</p>
+                <hr>
+                <div class="grid grid-3">
+                    <div><h6 class="text-muted">Price per Night</h6><h4 class="text-ok">₹{{ "{:,.0f}".format(hotel.price_per_night) }}</h4></div>
+                    <div><h6 class="text-muted">Available Rooms</h6><h4>{{ hotel.available_rooms }}</h4></div>
+                    <div><h6 class="text-muted">Total Rooms</h6><h4>{{ hotel.total_rooms }}</h4></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-head"><h5>Book Now</h5></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('booking.book_hotel', hotel_id=hotel.id) }}">
+                        <div class="field">
+                            <label for="check_in">Check-in Date</label>
+                            <input type="date" class="input" id="check_in" name="check_in" required>
+                        </div>
+                        <div class="field">
+                            <label for="check_out">Check-out Date</label>
+                            <input type="date" class="input" id="check_out" name="check_out" required>
+                        </div>
+                        <div class="field">
+                            <label for="num_rooms">Number of Rooms</label>
+                            <input type="number" class="input" id="num_rooms" name="num_rooms" min="1" max="{{ hotel.available_rooms }}" value="1" required>
+                        </div>
+                        <hr>
+                        <div class="mb-3"><h6 class="text-muted">Estimated Cost</h6><h4 id="total_cost">₹{{ "{:,.0f}".format(hotel.price_per_night) }}</h4></div>
+                        <button type="submit" class="btn btn-main full-width py-2"><i class="fas fa-key"></i> Continue to Payment</button>
+                        <a href="{{ url_for('customer.search_page') }}" class="btn btn-ghost full-width mt-2"><i class="fas fa-times"></i> Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const pricePerNight = {{ hotel.price_per_night }};
+    const ci = document.getElementById('check_in'), co = document.getElementById('check_out'), rm = document.getElementById('num_rooms');
+    function calc() {
+        if (ci.value && co.value && rm.value) {
+            const nights = Math.max(0, Math.ceil((new Date(co.value) - new Date(ci.value)) / 86400000));
+            document.getElementById('total_cost').textContent = '₹' + (pricePerNight * nights * (parseInt(rm.value)||1)).toLocaleString('en-IN', {minimumFractionDigits: 0});
+        }
+    }
+    ci.addEventListener('change', calc); co.addEventListener('change', calc); rm.addEventListener('change', calc);
+</script>
+{% endblock %}

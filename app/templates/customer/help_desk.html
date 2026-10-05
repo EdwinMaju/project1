@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Help Desk - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1>Help Desk</h1>
+            <p>Need assistance? Chat with our support team.</p>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3><i class="fas fa-headset"></i> Voya Support</h3>
+            <span class="badge badge-ok">Online</span>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            {% if not messages %}
+                <div class="text-center mt-10 text-gray-500">
+                    <i class="fas fa-comments fa-3x mb-4"></i>
+                    <p>No messages yet. Send a message to start a conversation with our admin.</p>
+                </div>
+            {% else %}
+                {% for message in messages %}
+                    <div class="message {% if message.sender_type == 'customer' %}message-customer{% else %}message-admin{% endif %}">
+                        {{ message.message }}
+                        <small class="message-info">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        
+        <div class="chat-input-area">
+            <form id="chat-form" class="chat-form">
+                <input type="text" id="message-input" class="chat-input" placeholder="Type your message here..." required autocomplete="off">
+                <button type="submit" class="chat-send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    scrollToBottom();
+
+    // Handle form submission
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // Clear input
+        messageInput.value = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('message', message);
+
+            const response = await fetch("{{ url_for('customer.help_desk') }}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                appendMessage(data.message, 'customer', data.created_at);
+                scrollToBottom();
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    });
+
+    function appendMessage(text, sender, time) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message message-${sender}`;
+        messageDiv.innerHTML = `
+            ${text}
+            <small class="message-info">${time}</small>
+        `;
+        
+        // Remove empty state if present
+        const emptyState = chatMessages.querySelector('.text-center');
+        if (emptyState) emptyState.remove();
+        
+        chatMessages.appendChild(messageDiv);
+    }
+
+    // Poll for new messages every 5 seconds
+    async function pollMessages() {
+        try {
+            const response = await fetch("{{ url_for('customer.get_messages') }}");
+            if (response.ok) {
+                const messages = await response.json();
+                
+                // Only update if count changed (simple check)
+                const currentCount = chatMessages.querySelectorAll('.message').length;
+                if (messages.length > currentCount) {
+                    chatMessages.innerHTML = '';
+                    messages.forEach(m => {
+                        appendMessage(m.message, m.sender_type, m.created_at);
+                    });
+                    scrollToBottom();
+                }
+            }
+        } catch (error) {
+            console.error('Error polling messages:', error);
+        }
+    }
+
+    setInterval(pollMessages, 5000);
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with {{ customer.username }} - Voya Admin{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="mb-6 flex items-center gap-4">
+        <a href="{{ url_for('admin.help_desk') }}" class="btn btn-ghost btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Help Desk
+        </a>
+        <div>
+            <h1>Chat with {{ customer.first_name }} {{ customer.last_name }}</h1>
+            <p>Customer Support for @{{ customer.username }} ({{ customer.email }})</p>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3><i class="fas fa-user"></i> {{ customer.first_name }} {{ customer.last_name }}</h3>
+            <span class="badge badge-neutral">User ID: #{{ customer.id }}</span>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            {% for message in messages %}
+                <div class="message {% if message.sender_type == 'admin' %}message-customer{% else %}message-admin{% endif %}">
+                    {{ message.message }}
+                    <small class="message-info">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="chat-input-area">
+            <form id="chat-form" class="chat-form">
+                <input type="text" id="message-input" class="chat-input" placeholder="Type your reply here..." required autocomplete="off">
+                <button type="submit" class="chat-send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    scrollToBottom();
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        messageInput.value = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('message', message);
+
+            const response = await fetch("{{ url_for('admin.view_chat', user_id=customer.id) }}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                appendMessage(data.message, 'customer', data.created_at); // Admin uses the same styled class for current user
+                scrollToBottom();
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    });
+
+    function appendMessage(text, sender, time) {
+        const messageDiv = document.createElement('div');
+        // If sender is 'admin', we use 'message-customer' style because it's the current user in this view
+        // If sender is 'customer', we use 'message-admin' style because it's the other party
+        const styleClass = sender === 'admin' ? 'message-customer' : 'message-admin';
+        
+        messageDiv.className = `message ${styleClass}`;
+        messageDiv.innerHTML = `
+            ${text}
+            <small class="message-info">${time}</small>
+        `;
+        chatMessages.appendChild(messageDiv);
+    }
+
+    async function pollMessages() {
+        try {
+            const response = await fetch("{{ url_for('admin.get_messages', user_id=customer.id) }}");
+            if (response.ok) {
+                const messages = await response.json();
+                const currentCount = chatMessages.querySelectorAll('.message').length;
+                
+                if (messages.length > currentCount) {
+                    chatMessages.innerHTML = '';
+                    messages.forEach(m => {
+                        appendMessage(m.message, m.sender_type, m.created_at);
+                    });
+                    scrollToBottom();
+                }
+            }
+        } catch (error) {
+            console.error('Error polling messages:', error);
+        }
+    }
+
+    setInterval(pollMessages, 5000);
+</script>
+{% endblock %}

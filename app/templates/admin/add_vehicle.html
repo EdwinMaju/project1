@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Add Vehicle - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div style="max-width:700px; margin:0 auto;">
+        <h1 class="mb-4"><i class="fas fa-plus"></i> Add Vehicle</h1>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.add_vehicle') }}">
+                    <div class="grid grid-2">
+                        <div class="field"><label for="vehicle_number">Vehicle Number</label><input type="text" class="input" id="vehicle_number" name="vehicle_number" required></div>
+                        <div class="field"><label for="vehicle_type">Vehicle Type</label>
+                            <select class="input" id="vehicle_type" name="vehicle_type" required>
+                                <option>Car</option><option>Bike</option><option>Bus</option><option>Van</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="city">City</label><input type="text" class="input" id="city" name="city" required></div>
+                        <div class="field"><label for="capacity">Capacity (persons)</label><input type="number" class="input" id="capacity" name="capacity" required></div>
+                    </div>
+                    <div class="field"><label for="description">Description</label><textarea class="input" id="description" name="description" rows="3"></textarea></div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="price_per_day">Price/Day</label><input type="number" class="input" id="price_per_day" name="price_per_day" step="0.01" required></div>
+                        <div class="field"><label for="units">Units</label><input type="number" class="input" id="units" name="units" value="20" required></div>
+                    </div>
+                    <div class="gap-row">
+                        <button type="submit" class="btn btn-main"><i class="fas fa-save"></i> Add Vehicle</button>
+                        <a href="{{ url_for('admin.manage_vehicles') }}" class="btn btn-ghost">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

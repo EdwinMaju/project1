@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Help Desk Management - Voya Admin{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1>Help Desk Support</h1>
+            <p>Manage customer inquiries and support requests.</p>
+        </div>
+    </div>
+
+    {% if not chats %}
+        <div class="card card-body text-center py-10">
+            <i class="fas fa-comments fa-4x mb-4 text-gray-300"></i>
+            <h3>No Active Chats</h3>
+            <p>When customers send messages, they will appear here.</p>
+        </div>
+    {% else %}
+        <div class="chat-list">
+            {% for chat in chats %}
+                <a href="{{ url_for('admin.view_chat', user_id=chat.user_id) }}" class="chat-list-item {% if chat.unread_count > 0 %}unread{% endif %}">
+                    <div class="chat-user-avatar">
+                        {{ chat.customer.first_name[0] if chat.customer.first_name else chat.customer.username[0] | upper }}
+                    </div>
+                    <div class="chat-item-info">
+                        <h4>{{ chat.customer.first_name }} {{ chat.customer.last_name }} (@{{ chat.customer.username }})</h4>
+                        <p>{{ chat.message }}</p>
+                    </div>
+                    <div class="chat-item-meta">
+                        <span class="chat-item-time">{{ chat.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        {% if chat.unread_count > 0 %}
+                            <span class="unread-badge">{{ chat.unread_count }} New</span>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Records - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4"><i class="fas fa-archive"></i> Records</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('bookings', this)">Bookings</button>
+        <button class="tab-btn" onclick="switchTab('payments', this)">Payments</button>
+    </div>
+
+    <!-- Bookings Tab -->
+    <div id="bookings" class="tab-panel active">
+        {% if bookings %}
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>ID</th><th>Customer</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for booking in bookings[:50] %}
+                    <tr>
+                        <td>#{{ booking.id }}</td>
+                        <td>{{ booking.user.username }}</td>
+                        <td>{{ booking.booking_type }}</td>
+                        <td>₹{{ "{:,.0f}".format(booking.total_cost) }}</td>
+                        <td>{% if booking.booking_status == 'confirmed' %}<span class="badge badge-ok">Confirmed</span>{% elif booking.booking_status == 'pending' %}<span class="badge badge-warn">Pending</span>{% else %}<span class="badge badge-bad">Cancelled</span>{% endif %}</td>
+                        <td>{{ booking.created_at.strftime('%d %b %Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<p>No bookings</p>{% endif %}
+    </div>
+
+    <!-- Payments Tab -->
+    <div id="payments" class="tab-panel">
+        {% if payments %}
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for payment in payments[:50] %}
+                    <tr>
+                        <td>#{{ payment.id }}</td>
+                        <td>{{ payment.user.username }}</td>
+                        <td>₹{{ "{:,.2f}".format(payment.amount) }}</td>
+                        <td>{% if payment.payment_status == 'completed' %}<span class="badge badge-ok">Completed</span>{% elif payment.payment_status == 'pending' %}<span class="badge badge-warn">Pending</span>{% else %}<span class="badge badge-bad">Failed</span>{% endif %}</td>
+                        <td>{{ payment.created_at.strftime('%d %b %Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<p>No payments</p>{% endif %}
+    </div>
+</div>
+
+<script>
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+}
+</script>
+{% endblock %}

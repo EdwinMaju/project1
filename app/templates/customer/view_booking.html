@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Details - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="flex-between mb-4">
+        <h1>Booking Details #{{ booking.id }}</h1>
+        <a href="{{ url_for('customer.dashboard') }}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Status Overview -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="grid grid-4">
+                <div>
+                    <h6 class="text-muted">Booking Status</h6>
+                    {% if booking.booking_status == 'confirmed' %}<span class="badge badge-ok">Confirmed</span>
+                    {% elif booking.booking_status == 'pending' %}<span class="badge badge-warn">Pending</span>
+                    {% else %}<span class="badge badge-bad">Cancelled</span>{% endif %}
+                </div>
+                <div>
+                    <h6 class="text-muted">Booking Type</h6>
+                    <h4>
+                        {% if booking.booking_type == 'flight' %}<i class="fas fa-plane"></i> Flight
+                        {% elif booking.booking_type == 'train' %}<i class="fas fa-train"></i> Train
+                        {% elif booking.booking_type == 'hotel' %}<i class="fas fa-hotel"></i> Hotel
+                        {% elif booking.booking_type == 'vehicle' %}<i class="fas fa-car"></i> Vehicle{% endif %}
+                    </h4>
+                </div>
+                <div>
+                    <h6 class="text-muted">Total Cost</h6>
+                    <h4>₹{{ "{:,.0f}".format(booking.total_cost) }}</h4>
+                </div>
+                <div>
+                    <h6 class="text-muted">Payment Status</h6>
+                    {% if payment %}
+                        {% if payment.payment_status == 'completed' %}<span class="badge badge-ok">Completed</span>
+                        {% elif payment.payment_status == 'pending' %}<span class="badge badge-warn">Pending Review</span>
+                        {% else %}<span class="badge badge-bad">Failed</span>{% endif %}
+                    {% else %}<span class="badge badge-neutral">No Payment</span>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-half">
+        <!-- Trip Details -->
+        <div>
+            <div class="card mb-4">
+                <div class="card-head"><h5>Trip Details</h5></div>
+                <div class="card-body">
+                    {% if booking.flight %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Flight</h6>
+                        <p class="mb-1"><strong>{{ booking.flight.airline }}</strong> - #{{ booking.flight.flight_number }}</p>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt"></i> {{ booking.flight.departure_city }} → {{ booking.flight.arrival_city }}</p>
+                        <p class="mb-1"><i class="fas fa-clock"></i> {{ booking.flight.departure_time.strftime('%d %b %Y, %H:%M') }} - {{ booking.flight.arrival_time.strftime('%H:%M') }}</p>
+                        <p><strong>Passengers:</strong> {{ booking.number_of_passengers }} | <strong>Price per ticket:</strong> ₹{{ "{:,.0f}".format(booking.flight.price) }}</p>
+                    </div>
+                    {% endif %}
+                    {% if booking.train %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Train</h6>
+                        <p class="mb-1"><strong>{{ booking.train.train_name }}</strong> - #{{ booking.train.train_number }}</p>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt"></i> {{ booking.train.departure_city }} → {{ booking.train.arrival_city }}</p>
+                        <p class="mb-1"><i class="fas fa-clock"></i> {{ booking.train.departure_time.strftime('%d %b %Y, %H:%M') }} - {{ booking.train.arrival_time.strftime('%H:%M') }}</p>
+                        <p><strong>Passengers:</strong> {{ booking.number_of_passengers }} | <strong>Coach:</strong> {{ booking.train.coach_type }}</p>
+                    </div>
+                    {% endif %}
+                    {% if booking.hotel %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Hotel</h6>
+                        <p class="mb-1"><strong>{{ booking.hotel.name }}</strong></p>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt"></i> {{ booking.hotel.city }} - {{ booking.hotel.address }}</p>
+                        <p class="mb-1"><i class="fas fa-calendar-alt"></i> Check-in: {{ booking.start_date.strftime('%d %b %Y') }} | Check-out: {{ booking.end_date.strftime('%d %b %Y') }}</p>
+                        <p><strong>Rooms:</strong> {{ booking.number_of_rooms }} | <strong>Nights:</strong> {{ booking.number_of_days }} | <strong>Price/night:</strong> ₹{{ "{:,.0f}".format(booking.hotel.price_per_night) }}</p>
+                    </div>
+                    {% endif %}
+                    {% if booking.vehicle %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Vehicle</h6>
+                        <p class="mb-1"><strong>{{ booking.vehicle.vehicle_type }}</strong> - #{{ booking.vehicle.vehicle_number }}</p>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt"></i> {{ booking.vehicle.city }}</p>
+                        <p class="mb-1"><i class="fas fa-calendar-alt"></i> From: {{ booking.start_date.strftime('%d %b %Y') }} | To: {{ booking.end_date.strftime('%d %b %Y') }}</p>
+                        <p><strong>Units:</strong> {{ booking.number_of_vehicles }} | <strong>Days:</strong> {{ booking.number_of_days }} | <strong>Price/day:</strong> ₹{{ "{:,.0f}".format(booking.vehicle.price_per_day) }}</p>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <p><strong>Booking Date:</strong> {{ booking.created_at.strftime('%d %b %Y, %H:%M') }}</p>
+                    {% if booking.confirmed_at %}
+                    <p><strong>Confirmed Date:</strong> {{ booking.confirmed_at.strftime('%d %b %Y, %H:%M') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if booking.screenshot or (payment and payment.payment_screenshot) %}
+            <div class="card">
+                <div class="card-head"><h5>Uploaded Documents</h5></div>
+                <div class="card-body">
+                    {% if booking.screenshot %}
+                    <p><strong>Trip Screenshot:</strong>
+                        <a href="{{ url_for('static', filename='uploads/' + booking.screenshot) }}" target="_blank" class="btn btn-sm btn-main"><i class="fas fa-download"></i> Download</a>
+                    </p>
+                    {% endif %}
+                    {% if payment and payment.payment_screenshot %}
+                    <p><strong>Payment Screenshot:</strong>
+                        <a href="{{ url_for('static', filename='uploads/' + payment.payment_screenshot) }}" target="_blank" class="btn btn-sm btn-main"><i class="fas fa-download"></i> Download</a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            {% if payment %}
+            <div class="card mb-4">
+                <div class="card-head"><h5>Payment Information</h5></div>
+                <div class="card-body">
+                    <p><strong>Amount:</strong><br>₹{{ "{:,.2f}".format(payment.amount) }}</p>
+                    <p><strong>Status:</strong><br>
+                        {% if payment.payment_status == 'completed' %}<span class="badge badge-ok">Completed</span>
+                        {% elif payment.payment_status == 'pending' %}<span class="badge badge-warn">Pending Review</span>
+                        {% else %}<span class="badge badge-bad">Failed</span>{% endif %}
+                    </p>
+                    {% if payment.transaction_id %}
+                    <p><strong>Transaction ID:</strong><br><code>{{ payment.transaction_id }}</code></p>
+                    {% endif %}
+                    {% if payment.paid_at %}
+                    <p><strong>Payment Date:</strong><br>{{ payment.paid_at.strftime('%d %b %Y, %H:%M') }}</p>
+                    {% endif %}
+                    {% if payment.qr_code_path %}
+                    <p><strong>QR Code:</strong><br>
+                        <img src="{{ url_for('booking.get_qrcode', payment_id=payment.id) }}" alt="QR Code" style="max-width:150px; margin:10px 0;">
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if payment.payment_status == 'pending' and booking.booking_status == 'pending' %}
+            <div class="alert alert-warn">
+                <div>
+                    <strong><i class="fas fa-hourglass-half"></i> Awaiting Confirmation</strong><br>
+                    Your payment is under review. Admin will confirm your booking soon.
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-info">
+                <div><strong>No Payment</strong><br>This booking doesn't have payment details yet.</div>
+            </div>
+            {% endif %}
+
+            {% if booking.admin_notes %}
+            <div class="card">
+                <div class="card-head"><h5>Admin Notes</h5></div>
+                <div class="card-body"><p>{{ booking.admin_notes }}</p></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions mt-4">
+        <a href="{{ url_for('customer.download_invoice', booking_id=booking.id) }}" class="btn btn-main">
+            <i class="fas fa-file-download"></i> Download Invoice
+        </a>
+        <a href="{{ url_for('customer.my_records') }}" class="btn btn-ghost">
+            <i class="fas fa-list"></i> View All Records
+        </a>
+    </div>
+</div>
+{% endblock %}

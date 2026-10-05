@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Trip Planner - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="planner-header">
+        <h1><i class="fas fa-magic"></i> Smart Trip Planner</h1>
+        <p class="text-muted">Tell us your budget and preferences, we'll build the best trip for you.</p>
+    </div>
+
+    <!-- Planner Input Form -->
+    <div class="card mb-5">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('customer.planner') }}">
+                <div class="search-row mb-4">
+                    <div class="search-field">
+                        <label>From</label>
+                        <input type="text" name="departure" value="{{ departure }}" required placeholder="e.g. Mumbai">
+                    </div>
+                    <div class="search-field">
+                        <label>To</label>
+                        <input type="text" name="arrival" value="{{ arrival }}" required placeholder="e.g. Delhi">
+                    </div>
+                    <div class="search-field">
+                        <label>Start Date</label>
+                        <input type="date" name="start_date" value="{{ start_date }}" required>
+                    </div>
+                    <div class="search-field">
+                        <label>End Date</label>
+                        <input type="date" name="end_date" value="{{ end_date }}" required>
+                    </div>
+                </div>
+
+                <div class="planner-prefs-row">
+                    <div class="search-field">
+                        <label class="d-block mb-1"><strong><i class="fas fa-wallet"></i> Total Budget
+                                (₹)</strong></label>
+                        <input type="number" name="budget" value="{{ budget }}" class="form-control"
+                            placeholder="e.g. 25000" required>
+                    </div>
+
+                    <div class="facilities-group">
+                        <label class="d-block mb-1"><strong><i class="fas fa-concierge-bell"></i> Services
+                                Needed</strong></label>
+                        <div class="filter-checks">
+                            <label class="filter-check-label"><input type="checkbox" name="facilities" value="flight"
+                                    checked> Flight</label>
+                            <label class="filter-check-label"><input type="checkbox" name="facilities" value="train"
+                                    checked> Train</label>
+                            <label class="filter-check-label"><input type="checkbox" name="facilities" value="hotel"
+                                    checked> Hotel</label>
+                            <label class="filter-check-label"><input type="checkbox" name="facilities" value="vehicle"
+                                    checked> Vehicle</label>
+                        </div>
+                    </div>
+
+                    <div class="search-field">
+                        <button type="submit" class="btn btn-main">
+                            <i class="fas fa-wand-sparkles"></i> Generate Packages
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if packages is not none %}
+    {% if packages %}
+    <h2 class="mb-4"><i class="fas fa-gift"></i> Recommended Packages for Your Budget</h2>
+
+    <!-- Graphical Package Comparison -->
+    <div class="package-grid">
+        {% for pkg in packages %}
+        <div class="package-card {% if 'Standard' in pkg.name %}featured{% endif %}">
+            {% if 'Standard' in pkg.name %}
+            <div class="package-ribbon">Best Choice</div>
+            {% endif %}
+
+            <div class="package-head">
+                <h3>{{ pkg.name }}</h3>
+                <div class="package-price">₹{{ "{:,.0f}".format(pkg.total) }}</div>
+                <small>Total Estimated Cost</small>
+            </div>
+
+            <div class="package-contents">
+                {% if pkg.flight %}
+                <div class="pkg-item">
+                    <div class="pkg-item-icon"><i class="fas fa-plane"></i></div>
+                    <div class="pkg-item-info">
+                        <strong>{{ pkg.flight.airline }}</strong>
+                        <span>Flight {{ pkg.flight.flight_number }}</span>
+                        <small><i class="fas fa-clock"></i> {{ start_date }} {{
+                            pkg.flight.departure_time.strftime('%H:%M') }}</small>
+                        <small class="mt-1">₹{{ "{:,.0f}".format(pkg.flight.price) }}</small>
+                    </div>
+                </div>
+                {% elif pkg.train %}
+                <div class="pkg-item">
+                    <div class="pkg-item-icon"><i class="fas fa-train"></i></div>
+                    <div class="pkg-item-info">
+                        <strong>{{ pkg.train.train_name }}</strong>
+                        <span>Train {{ pkg.train.train_number }}</span>
+                        <small><i class="fas fa-clock"></i> {{ start_date }} {{
+                            pkg.train.departure_time.strftime('%H:%M') }}</small>
+                        <small class="mt-1">₹{{ "{:,.0f}".format(pkg.train.price) }}</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if pkg.hotel %}
+                <div class="pkg-item">
+                    <div class="pkg-item-icon"><i class="fas fa-hotel"></i></div>
+                    <div class="pkg-item-info">
+                        <strong>{{ pkg.hotel.name }}</strong>
+                        <span>{{ pkg.hotel.rating }}★ stay</span>
+                        <small>₹{{ "{:,.0f}".format(pkg.hotel.price_per_night) }} / night</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if pkg.vehicle %}
+                <div class="pkg-item">
+                    <div class="pkg-item-icon"><i class="fas fa-car"></i></div>
+                    <div class="pkg-item-info">
+                        <strong>{{ pkg.vehicle.vehicle_type }}</strong>
+                        <span>{{ pkg.vehicle.description }}</span>
+                        <small>₹{{ "{:,.0f}".format(pkg.vehicle.price_per_day) }} / day</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="package-footer">
+                <div class="budget-meter">
+                    {% set percent = (pkg.total / budget * 100)|round %}
+                    <div class="flex-between mb-1">
+                        <small>Budget Usage</small>
+                        <small>{{ percent }}%</small>
+                    </div>
+                    <div class="meter-bar">
+                        <div class="meter-fill" style="width: {{ percent }}%"></div>
+                    </div>
+                </div>
+                <button class="btn btn-main full-width mt-3"
+                    onclick="alert('Bundle booking feature coming soon! Please book individual items for now.')">
+                    <i class="fas fa-check-circle"></i> Select This Bundle
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Graphical Comparison Chart -->
+    <div class="card mt-5">
+        <div class="card-body">
+            <h3><i class="fas fa-chart-area"></i> Package Comparison Chart</h3>
+            <div class="chart-container" style="height: 350px;">
+                <canvas id="packageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="alert alert-bad">
+        <i class="fas fa-exclamation-triangle"></i> No packages found within your budget (₹{{ "{:,.0f}".format(budget)
+        }}).
+        Try increasing your budget or reducing the number of requested services.
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if packages %}
+<script>
+    const ctx = document.getElementById('packageChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for p in packages %}"{{ p.name }}",{% endfor %}],
+        datasets: [{
+            label: 'Total Cost (₹)',
+            data: [{% for p in packages %}{{ p.total }}, {% endfor %}],
+        backgroundColor: ['rgba(30,64,175,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)'],
+        borderColor: ['#1e40af', '#10b981', '#8b5cf6'],
+        borderWidth: 2,
+        borderRadius: 8
+        }]
+    },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => '₹' + ctx.raw.toLocaleString()
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: {{ budget * 1.1 }},
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { callback: v => '₹' + v.toLocaleString() }
+            },
+        x: {
+        grid: { display: false }
+    }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

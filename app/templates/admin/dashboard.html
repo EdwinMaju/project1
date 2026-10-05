@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - Voya{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h1><i class="fas fa-tachometer-alt text-primary"></i> Admin Dashboard</h1>
+        <p class="text-muted">Manage bookings, payments, and services</p>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="stats-row mb-4">
+        <div>
+            <div class="stat-card-dark">
+                <h3>{{ total_bookings }}</h3>
+                <p>Total Bookings</p>
+            </div>
+        </div>
+        <div>
+            <div class="stat-card-dark">
+                <h3>{{ confirmed_bookings }}</h3>
+                <p>Confirmed</p>
+            </div>
+        </div>
+        <div>
+            <div class="stat-card-dark">
+                <h3>{{ pending_bookings }}</h3>
+                <p>Pending Review</p>
+            </div>
+        </div>
+        <div>
+            <div class="stat-card-dark" {% if unread_support_messages > 0 %}style="border-bottom: 4px solid var(--primary);"{% endif %}>
+                <h3>{{ unread_support_messages }}</h3>
+                <p>Support Messages</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue & Commission -->
+    <div class="grid grid-3 mb-4">
+        <div class="card card-accent-green">
+            <div class="card-body rev-card">
+                <p>Total Revenue</p>
+                <h2 style="color: var(--green);">₹{{ "{:,.0f}".format(total_revenue) }}</h2>
+                <small>Gross booking value</small>
+            </div>
+        </div>
+        <div class="card card-accent">
+            <div class="card-body rev-card">
+                <p>Admin Commission (10%) <a href="{{ url_for('admin.income') }}" class="btn btn-sm btn-main" style="float: right;">View Details</a></p>
+                <h2 style="color: var(--primary);">₹{{ "{:,.0f}".format(total_commission) }}</h2>
+                <small>Net income earned</small>
+            </div>
+        </div>
+        <div class="card card-accent-yellow">
+            <div class="card-body rev-card">
+                <p>Pending Payments</p>
+                <h2 style="color: var(--yellow);">₹{{ "{:,.0f}".format(pending_amount) }}</h2>
+                <small>Awaiting review</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h2 class="section-title">Quick Actions</h2>
+    <div class="grid grid-3 mb-4">
+        <a href="{{ url_for('admin.manage_bookings') }}" class="btn btn-main full-width"><i class="fas fa-list"></i>
+            Bookings</a>
+        <a href="{{ url_for('admin.help_desk') }}" class="btn btn-main full-width"><i class="fas fa-headset"></i>
+            Help Desk</a>
+        <a href="{{ url_for('admin.manage_flights') }}" class="btn btn-main full-width"><i class="fas fa-plane"></i>
+            Flights</a>
+        <a href="{{ url_for('admin.manage_trains') }}" class="btn btn-main full-width"><i class="fas fa-train"></i>
+            Trains</a>
+        <a href="{{ url_for('admin.manage_hotels') }}" class="btn btn-main full-width"><i class="fas fa-hotel"></i>
+            Hotels</a>
+        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-main full-width"><i class="fas fa-users"></i>
+            Users</a>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="card">
+        <div class="card-head">
+            <h5>Recent Bookings</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_bookings %}
+            <div class="table-scroll">
+                <table class="table table-light">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in recent_bookings %}
+                        <tr>
+                            <td><strong>#{{ booking.id }}</strong></td>
+                            <td>{{ booking.user.first_name }} {{ booking.user.last_name }}</td>
+                            <td>
+                                {% if booking.booking_type == 'flight' %}<i class="fas fa-plane text-primary"></i>
+                                Flight
+                                {% elif booking.booking_type == 'train' %}<i class="fas fa-train text-primary"></i>
+                                Train
+                                {% elif booking.booking_type == 'hotel' %}<i class="fas fa-hotel text-primary"></i>
+                                Hotel
+                                {% elif booking.booking_type == 'vehicle' %}<i class="fas fa-car text-primary"></i>
+                                Vehicle{% endif %}
+                            </td>
+                            <td><strong>₹{{ "{:,.0f}".format(booking.total_cost) }}</strong></td>
+                            <td>
+                                {% if booking.booking_status == 'confirmed' %}<span
+                                    class="badge badge-ok">Confirmed</span>
+                                {% elif booking.booking_status == 'pending' %}<span
+                                    class="badge badge-warn">Pending</span>
+                                {% else %}<span class="badge badge-bad">Cancelled</span>{% endif %}
+                            </td>
+                            <td>{{ booking.created_at.strftime('%d %b %Y') }}</td>
+                            <td><a href="{{ url_for('admin.view_booking', booking_id=booking.id) }}"
+                                    class="btn btn-sm btn-main"><i class="fas fa-eye"></i> View</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info"><i class="fas fa-info-circle"></i> No recent bookings available.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

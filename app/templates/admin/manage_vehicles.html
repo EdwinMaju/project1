@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Manage Vehicles - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div class="flex-between mb-4">
+        <h1><i class="fas fa-car"></i> Manage Vehicles</h1>
+        <a href="{{ url_for('admin.add_vehicle') }}" class="btn btn-main"><i class="fas fa-plus"></i> Add Vehicle</a>
+    </div>
+    {% if vehicles.items %}
+    <div class="table-scroll">
+        <table class="table">
+            <thead><tr><th>Vehicle #</th><th>Type</th><th>City</th><th>Price/Day</th><th>Capacity</th><th>Available</th></tr></thead>
+            <tbody>
+                {% for vehicle in vehicles.items %}
+                <tr>
+                    <td><strong>{{ vehicle.vehicle_number }}</strong></td>
+                    <td>{{ vehicle.vehicle_type }}</td>
+                    <td>{{ vehicle.city }}</td>
+                    <td>₹{{ "{:,.0f}".format(vehicle.price_per_day) }}</td>
+                    <td>{{ vehicle.capacity }} persons</td>
+                    <td>{{ vehicle.available_units }} / {{ vehicle.total_units }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">No vehicles found</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="mb-4">
+        <h1><i class="fas fa-user-circle"></i> Welcome, {{ current_user.first_name or current_user.username }}</h1>
+        <p class="text-muted">Manage your bookings and travel plans</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row mb-4">
+        <div>
+            <div class="stat-card">
+                <h3>{{ total_bookings }}</h3>
+                <p>Total Bookings</p>
+            </div>
+        </div>
+        <div>
+            <div class="stat-card">
+                <h3>{{ confirmed_bookings }}</h3>
+                <p>Confirmed</p>
+            </div>
+        </div>
+        <div>
+            <div class="stat-card">
+                <h3>{{ pending_bookings }}</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+        <div>
+            <div class="stat-card">
+                <h3>₹{{ "{:,.0f}".format(total_spent) }}</h3>
+                <p>Total Spent</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+        <a href="{{ url_for('customer.search_page') }}" class="btn btn-main">
+            <i class="fas fa-search"></i> Search & Book
+        </a>
+        <a href="{{ url_for('customer.planner') }}" class="btn btn-main">
+            <i class="fas fa-magic"></i> Trip Planner
+        </a>
+        <a href="{{ url_for('customer.my_records') }}" class="btn btn-main">
+            <i class="fas fa-list"></i> View Records
+        </a>
+    </div>
+
+    <!-- Recent Bookings Table -->
+    <div class="card">
+        <div class="card-head">
+            <h5>Recent Bookings</h5>
+        </div>
+        <div class="card-body">
+            {% if bookings %}
+            <div class="table-scroll">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Cost</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings[:5] %}
+                        <tr>
+                            <td><strong>#{{ booking.id }}</strong></td>
+                            <td>
+                                {% if booking.booking_type == 'flight' %}<i class="fas fa-plane"></i> Flight
+                                {% elif booking.booking_type == 'train' %}<i class="fas fa-train"></i> Train
+                                {% elif booking.booking_type == 'hotel' %}<i class="fas fa-hotel"></i> Hotel
+                                {% elif booking.booking_type == 'vehicle' %}<i class="fas fa-car"></i> Vehicle
+                                {% endif %}
+                            </td>
+                            <td>{{ booking.created_at.strftime('%d %b %Y') }}</td>
+                            <td><strong>₹{{ "{:,.0f}".format(booking.total_cost) }}</strong></td>
+                            <td>
+                                {% if booking.booking_status == 'confirmed' %}<span
+                                    class="badge badge-ok">Confirmed</span>
+                                {% elif booking.booking_status == 'pending' %}<span
+                                    class="badge badge-warn">Pending</span>
+                                {% else %}<span class="badge badge-bad">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('customer.view_booking', booking_id=booking.id) }}"
+                                    class="btn btn-sm btn-main">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No bookings yet. <a href="{{ url_for('customer.search_page') }}">Start booking</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Compare {{ compare_type|title }}s - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="compare-header">
+        <div>
+            <h1><i class="fas fa-chart-bar"></i> Compare
+                {% if compare_type == 'flight' %}<i class="fas fa-plane"></i> Flights
+                {% elif compare_type == 'train' %}<i class="fas fa-train"></i> Trains
+                {% elif compare_type == 'hotel' %}<i class="fas fa-hotel"></i> Hotels
+                {% elif compare_type == 'vehicle' %}<i class="fas fa-car"></i> Vehicles
+                {% endif %}
+            </h1>
+            <p class="text-muted">Visual comparison to help you choose the best option</p>
+        </div>
+        <a href="{{ url_for('customer.search_page') }}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Back to Search
+        </a>
+    </div>
+
+    <!-- ★ Best Pick Recommendation ★ -->
+    <div class="best-pick-card" id="bestPickCard">
+        <div class="best-pick-crown"><i class="fas fa-crown"></i></div>
+        <div class="best-pick-body">
+            <h3><i class="fas fa-trophy"></i> Our Top Recommendation</h3>
+            <div class="best-pick-name" id="bestPickName"></div>
+            <p class="best-pick-reason" id="bestPickReason"></p>
+            <div class="best-pick-actions" id="bestPickActions"></div>
+        </div>
+        <div class="best-pick-score">
+            <div class="score-circle" id="bestScoreCircle">
+                <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="8"/>
+                    <circle cx="60" cy="60" r="54" fill="none" stroke="#fff" stroke-width="8"
+                            stroke-dasharray="339.292" stroke-dashoffset="339.292"
+                            stroke-linecap="round" id="scoreArc"/>
+                </svg>
+                <span class="score-value" id="bestScoreVal">0</span>
+            </div>
+            <small>Overall Score</small>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="compare-charts-row">
+        <div class="compare-chart-card">
+            <h4><i class="fas fa-spider"></i> Performance Radar</h4>
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+        <div class="compare-chart-card">
+            <h4><i class="fas fa-rupee-sign"></i> Price Comparison</h4>
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Breakdown -->
+    <div class="compare-chart-card full-width mt-3">
+        <h4><i class="fas fa-chart-line"></i> Overall Score Breakdown</h4>
+        <div class="chart-container chart-container-sm">
+            <canvas id="scoreChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <h3 class="mt-4 mb-3"><i class="fas fa-th-large"></i> Quick Stats</h3>
+    <div class="compare-stats-grid">
+        {% for item in items %}
+        <div class="compare-stat-card {% if loop.index0 == best_idx %}best-highlight{% endif %}">
+            {% if loop.index0 == best_idx %}
+            <div class="best-tag"><i class="fas fa-crown"></i> Best Pick</div>
+            {% endif %}
+            <div class="stat-card-icon">
+                {% if compare_type == 'flight' %}<i class="fas fa-plane"></i>
+                {% elif compare_type == 'train' %}<i class="fas fa-train"></i>
+                {% elif compare_type == 'hotel' %}<i class="fas fa-hotel"></i>
+                {% elif compare_type == 'vehicle' %}<i class="fas fa-car"></i>
+                {% endif %}
+            </div>
+            <h5>
+                {% if compare_type == 'flight' %}{{ item.airline }}
+                {% elif compare_type == 'train' %}{{ item.train_name }}
+                {% elif compare_type == 'hotel' %}{{ item.name }}
+                {% elif compare_type == 'vehicle' %}{{ item.vehicle_type }}
+                {% endif %}
+            </h5>
+            <div class="stat-details">
+                {% if compare_type == 'flight' %}
+                    <span><i class="fas fa-hashtag"></i> {{ item.flight_number }}</span>
+                    <span><i class="fas fa-route"></i> {{ item.departure_city }} → {{ item.arrival_city }}</span>
+                    <span><i class="fas fa-clock"></i> {{ item.departure_time.strftime('%H:%M') }} - {{ item.arrival_time.strftime('%H:%M') }}</span>
+                    <span class="stat-price"><i class="fas fa-rupee-sign"></i> {{ "{:,.0f}".format(item.price) }}</span>
+                    <span><i class="fas fa-chair"></i> {{ item.available_seats }} seats</span>
+                {% elif compare_type == 'train' %}
+                    <span><i class="fas fa-hashtag"></i> {{ item.train_number }}</span>
+                    <span><i class="fas fa-route"></i> {{ item.departure_city }} → {{ item.arrival_city }}</span>
+                    <span><i class="fas fa-clock"></i> {{ item.departure_time.strftime('%H:%M') }} - {{ item.arrival_time.strftime('%H:%M') }}</span>
+                    <span><i class="fas fa-couch"></i> {{ item.coach_type }}</span>
+                    <span class="stat-price"><i class="fas fa-rupee-sign"></i> {{ "{:,.0f}".format(item.price) }}</span>
+                {% elif compare_type == 'hotel' %}
+                    <span><i class="fas fa-map-marker-alt"></i> {{ item.city }}</span>
+                    {% if item.rating %}<span><i class="fas fa-star"></i> {{ item.rating }}★</span>{% endif %}
+                    <span class="stat-price"><i class="fas fa-rupee-sign"></i> {{ "{:,.0f}".format(item.price_per_night) }}/night</span>
+                    <span><i class="fas fa-door-open"></i> {{ item.available_rooms }} rooms</span>
+                {% elif compare_type == 'vehicle' %}
+                    <span><i class="fas fa-hashtag"></i> {{ item.vehicle_number }}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> {{ item.city }}</span>
+                    <span><i class="fas fa-users"></i> {{ item.capacity }} persons</span>
+                    <span class="stat-price"><i class="fas fa-rupee-sign"></i> {{ "{:,.0f}".format(item.price_per_day) }}/day</span>
+                {% endif %}
+            </div>
+            <div class="stat-card-action">
+                {% if compare_type == 'flight' %}
+                <a href="{{ url_for('booking.book_flight', flight_id=item.id) }}" class="btn btn-main btn-sm full-width">
+                    <i class="fas fa-ticket-alt"></i> Book Now
+                </a>
+                {% elif compare_type == 'train' %}
+                <a href="{{ url_for('booking.book_train', train_id=item.id) }}" class="btn btn-main btn-sm full-width">
+                    <i class="fas fa-ticket-alt"></i> Book Now
+                </a>
+                {% elif compare_type == 'hotel' %}
+                <a href="{{ url_for('booking.book_hotel', hotel_id=item.id) }}" class="btn btn-main btn-sm full-width">
+                    <i class="fas fa-key"></i> Book Now
+                </a>
+                {% elif compare_type == 'vehicle' %}
+                <a href="{{ url_for('booking.book_vehicle', vehicle_id=item.id) }}" class="btn btn-main btn-sm full-width">
+                    <i class="fas fa-car"></i> Book Now
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chartData = {{ chart_data|safe }};
+const bestIdx = chartData.best_idx;
+
+// ── Best Pick Card ──
+const bestName = chartData.labels[bestIdx];
+const bestScore = chartData.scores[bestIdx];
+document.getElementById('bestPickName').textContent = bestName;
+document.getElementById('bestScoreVal').textContent = bestScore;
+
+// Determine reason
+const bestPrice = chartData.prices[bestIdx];
+const minPrice = Math.min(...chartData.prices);
+let reason = 'Best overall balance of price, availability & value.';
+if (bestPrice === minPrice) {
+    reason = 'Lowest price combined with great availability makes this your best deal!';
+}
+document.getElementById('bestPickReason').textContent = reason;
+
+// Animate score circle
+const arc = document.getElementById('scoreArc');
+const circumference = 2 * Math.PI * 54;
+setTimeout(() => {
+    arc.style.transition = 'stroke-dashoffset 1.5s ease';
+    arc.style.strokeDashoffset = circumference * (1 - bestScore / 100);
+}, 300);
+
+// Book button for best pick
+const items = {{ items|tojson(indent=None)|safe if items is iterable else '[]' }};
+// Build URL from compare_type
+{% if compare_type == 'flight' %}
+const bookUrl = "{{ url_for('booking.book_flight', flight_id=0) }}".replace('/0', '/' + {{ items[best_idx].id }});
+{% elif compare_type == 'train' %}
+const bookUrl = "{{ url_for('booking.book_train', train_id=0) }}".replace('/0', '/' + {{ items[best_idx].id }});
+{% elif compare_type == 'hotel' %}
+const bookUrl = "{{ url_for('booking.book_hotel', hotel_id=0) }}".replace('/0', '/' + {{ items[best_idx].id }});
+{% elif compare_type == 'vehicle' %}
+const bookUrl = "{{ url_for('booking.book_vehicle', vehicle_id=0) }}".replace('/0', '/' + {{ items[best_idx].id }});
+{% endif %}
+document.getElementById('bestPickActions').innerHTML = `
+    <a href="${bookUrl}" class="btn btn-main btn-sm"><i class="fas fa-bolt"></i> Book This Now</a>
+`;
+
+// ── Chart Colors ──
+const chartColors = [
+    { border: '#1e40af', bg: 'rgba(30,64,175,0.7)', bgLight: 'rgba(30,64,175,0.15)' },
+    { border: '#10b981', bg: 'rgba(16,185,129,0.7)', bgLight: 'rgba(16,185,129,0.15)' },
+    { border: '#f59e0b', bg: 'rgba(245,158,11,0.7)', bgLight: 'rgba(245,158,11,0.15)' },
+    { border: '#8b5cf6', bg: 'rgba(139,92,246,0.7)', bgLight: 'rgba(139,92,246,0.15)' },
+];
+
+// ── Radar Chart ──
+const radarCtx = document.getElementById('radarChart').getContext('2d');
+new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+        labels: chartData.radar_labels,
+        datasets: chartData.radar_datasets.map((ds, i) => ({
+            ...ds,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+        }))
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { size: 12, weight: '500' } } }
+        },
+        scales: {
+            r: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { stepSize: 20, display: false },
+                grid: { color: 'rgba(0,0,0,0.06)' },
+                pointLabels: { font: { size: 11, weight: '600' }, color: '#374151' },
+                angleLines: { color: 'rgba(0,0,0,0.06)' }
+            }
+        }
+    }
+});
+
+// ── Price Bar Chart ──
+const priceCtx = document.getElementById('priceChart').getContext('2d');
+new Chart(priceCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.labels,
+        datasets: [{
+            label: 'Price (₹)',
+            data: chartData.prices,
+            backgroundColor: chartData.labels.map((_, i) => i === bestIdx ? '#10b981' : chartColors[i % chartColors.length].bg),
+            borderColor: chartData.labels.map((_, i) => i === bestIdx ? '#059669' : chartColors[i % chartColors.length].border),
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => '₹' + ctx.raw.toLocaleString()
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.04)' },
+                ticks: { callback: v => '₹' + v.toLocaleString(), font: { size: 11 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 11, weight: '500' } }
+            }
+        }
+    }
+});
+
+// ── Score Horizontal Bar ──
+const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+new Chart(scoreCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.labels,
+        datasets: [{
+            label: 'Score',
+            data: chartData.scores,
+            backgroundColor: chartData.labels.map((_, i) => {
+                const s = chartData.scores[i];
+                if (i === bestIdx) return 'rgba(16,185,129,0.85)';
+                if (s >= 60) return 'rgba(30,64,175,0.7)';
+                if (s >= 40) return 'rgba(245,158,11,0.7)';
+                return 'rgba(220,38,38,0.6)';
+            }),
+            borderRadius: 6,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => `Score: ${ctx.raw}/100` } }
+        },
+        scales: {
+            x: { max: 100, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11 } } },
+            y: { grid: { display: false }, ticks: { font: { size: 12, weight: '500' } } }
+        }
+    }
+});
+
+function removeFromComparison(itemId) {
+    const url = new URL(window.location.href);
+    let ids = url.searchParams.get('ids').split(',').map(Number);
+    ids = ids.filter(id => id !== itemId);
+    
+    if (ids.length < 2) {
+        window.history.back();
+        return;
+    }
+    
+    url.searchParams.set('ids', ids.join(','));
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

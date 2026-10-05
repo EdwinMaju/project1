@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}My Records - Voya{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <h1 class="mb-4"><i class="fas fa-history"></i> My Records</h1>
+
+    {% if bookings.items %}
+    <div class="table-scroll">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Type</th>
+                    <th>Details</th>
+                    <th>Date</th>
+                    <th>Cost</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings.items %}
+                <tr>
+                    <td><strong>#{{ booking.id }}</strong></td>
+                    <td>
+                        {% if booking.booking_type == 'flight' %}<i class="fas fa-plane"></i> Flight
+                        {% elif booking.booking_type == 'train' %}<i class="fas fa-train"></i> Train
+                        {% elif booking.booking_type == 'hotel' %}<i class="fas fa-hotel"></i> Hotel
+                        {% elif booking.booking_type == 'vehicle' %}<i class="fas fa-car"></i> Vehicle
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if booking.flight %}
+                            {{ booking.flight.departure_city }} → {{ booking.flight.arrival_city }}<br>
+                            <small>{{ booking.flight.airline }}</small>
+                        {% elif booking.train %}
+                            {{ booking.train.departure_city }} → {{ booking.train.arrival_city }}<br>
+                            <small>{{ booking.train.train_name }}</small>
+                        {% elif booking.hotel %}
+                            {{ booking.hotel.name }}<br>
+                            <small>{{ booking.hotel.city }}</small>
+                        {% elif booking.vehicle %}
+                            {{ booking.vehicle.vehicle_type }} in {{ booking.vehicle.city }}<br>
+                            <small>#{{ booking.vehicle.vehicle_number }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ booking.created_at.strftime('%d %b %Y') }}</td>
+                    <td><strong>₹{{ "{:,.0f}".format(booking.total_cost) }}</strong></td>
+                    <td>
+                        {% if booking.booking_status == 'confirmed' %}<span class="badge badge-ok">Confirmed</span>
+                        {% elif booking.booking_status == 'pending' %}<span class="badge badge-warn">Pending</span>
+                        {% else %}<span class="badge badge-bad">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('customer.view_booking', booking_id=booking.id) }}" class="btn btn-sm btn-main">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination">
+            {% if bookings.has_prev %}
+            <li><a class="page-link" href="{{ url_for('customer.my_records', page=bookings.prev_num) }}">Previous</a></li>
+            {% endif %}
+            {% for page_num in bookings.iter_pages() %}
+                {% if page_num %}
+                    <li class="{% if page_num == bookings.page %}page-active{% endif %}">
+                        <a class="page-link" href="{{ url_for('customer.my_records', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            {% if bookings.has_next %}
+            <li><a class="page-link" href="{{ url_for('customer.my_records', page=bookings.next_num) }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <a href="{{ url_for('customer.dashboard') }}" class="btn btn-ghost mt-3">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> You don't have any bookings yet.
+        <a href="{{ url_for('customer.search_page') }}">Start booking now!</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

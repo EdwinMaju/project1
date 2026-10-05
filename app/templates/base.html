@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Voya - Travel Booking System{% endblock %}</title>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    {% if request.endpoint not in ['auth.login', 'auth.register'] %}
+    <nav class="nav">
+        <a class="nav-brand"
+            href="{% if current_user.is_authenticated %}{% if current_user.is_admin() %}{{ url_for('admin.dashboard') }}{% else %}{{ url_for('customer.dashboard') }}{% endif %}{% else %}{{ url_for('auth.login') }}{% endif %}">
+            <i class="fas fa-plane-departure"></i> Voya
+        </a>
+
+        <button class="nav-toggle" onclick="document.querySelector('.nav-items').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </button>
+
+        {% if current_user.is_authenticated %}
+        <ul class="nav-items">
+            {% if current_user.is_admin() %}
+            <li><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('admin.manage_bookings') }}">Bookings</a></li>
+            <li class="dropdown">
+                <a class="dropdown-trigger" onclick="this.nextElementSibling.classList.toggle('open')">Services</a>
+                <div class="dropdown-menu">
+                    <a href="{{ url_for('admin.manage_flights') }}">Flights</a>
+                    <a href="{{ url_for('admin.manage_trains') }}">Trains</a>
+                    <a href="{{ url_for('admin.manage_hotels') }}">Hotels</a>
+                    <a href="{{ url_for('admin.manage_vehicles') }}">Vehicles</a>
+                </div>
+            </li>
+            <li><a href="{{ url_for('admin.manage_users') }}">Users</a></li>
+            <li><a href="{{ url_for('admin.records') }}">Records</a></li>
+            <li><a href="{{ url_for('admin.help_desk') }}">Help Desk</a></li>
+            {% else %}
+            <li><a href="{{ url_for('customer.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('customer.search_page') }}">Book Now</a></li>
+            <li><a href="{{ url_for('customer.planner') }}"><i class="fas fa-magic"></i> Trip Planner</a></li>
+            <li><a href="{{ url_for('customer.my_records') }}">My Records</a></li>
+            <li><a href="{{ url_for('customer.help_desk') }}">Help Desk</a></li>
+            {% endif %}
+
+            <li class="dropdown">
+                <a class="dropdown-trigger" onclick="this.nextElementSibling.classList.toggle('open')">
+                    <i class="fas fa-user"></i> {{ current_user.first_name or current_user.username }}
+                </a>
+                <div class="dropdown-menu right">
+                    <a href="{{ url_for('customer.profile') }}">Profile</a>
+                    <a href="{{ url_for('customer.settings') }}">Settings</a>
+                    <div class="dropdown-sep"></div>
+                    <a href="{{ url_for('auth.logout') }}">Logout</a>
+                </div>
+            </li>
+        </ul>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    <div class="container mt-2">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="alert {% if category == 'error' or category == 'danger' %}alert-bad{% elif category == 'success' %}alert-ok{% elif category == 'warning' %}alert-warn{% else %}alert-info{% endif %}">
+            {{ message }}
+            <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Content -->
+    <div class="container mt-2">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Voya. All rights reserved.</p>
+        <p>Plan your journey, book with confidence.</p>
+    </footer>
+
+    <script>
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
+</body>
+
+</html>

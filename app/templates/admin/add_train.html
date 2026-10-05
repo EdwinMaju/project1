@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Add Train - Admin{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div style="max-width:700px; margin:0 auto;">
+        <h1 class="mb-4"><i class="fas fa-plus"></i> Add New Train</h1>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.add_train') }}">
+                    <div class="grid grid-2">
+                        <div class="field"><label for="train_number">Train Number</label><input type="text" class="input" id="train_number" name="train_number" required></div>
+                        <div class="field"><label for="train_name">Train Name</label><input type="text" class="input" id="train_name" name="train_name" required></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="departure_city">From</label><input type="text" class="input" id="departure_city" name="departure_city" required></div>
+                        <div class="field"><label for="arrival_city">To</label><input type="text" class="input" id="arrival_city" name="arrival_city" required></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label for="departure_time">Departure</label><input type="datetime-local" class="input" id="departure_time" name="departure_time" required></div>
+                        <div class="field"><label for="arrival_time">Arrival</label><input type="datetime-local" class="input" id="arrival_time" name="arrival_time" required></div>
+                    </div>
+                    <div class="grid grid-3">
+                        <div class="field"><label for="price">Price</label><input type="number" class="input" id="price" name="price" step="0.01" required></div>
+                        <div class="field"><label for="coach_type">Coach Type</label>
+                            <select class="input" id="coach_type" name="coach_type" required>
+                                <option>AC</option><option>Non-AC</option><option>Sleeper</option>
+                            </select>
+                        </div>
+                        <div class="field"><label for="seats">Seats</label><input type="number" class="input" id="seats" name="seats" value="500" required></div>
+                    </div>
+                    <div class="gap-row">
+                        <button type="submit" class="btn btn-main"><i class="fas fa-save"></i> Add Train</button>
+                        <a href="{{ url_for('admin.manage_trains') }}" class="btn btn-ghost">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
